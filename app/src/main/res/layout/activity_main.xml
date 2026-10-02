@@ -15,7 +15,7 @@
 
     <TextView
         android:layout_width="match_parent"
-        android:layout_height="wrap_wrap"
+        android:layout_height="wrap_content"
         android:text="Responder solo cuando el mensaje recibido contenga: (Déjalo vacío para responder a todo)"
         android:textSize="12sp" />
 
