@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F4F6F9"
+    android:background="#F3F4F6"
     android:fillViewport="true">
 
     <LinearLayout
@@ -12,23 +12,46 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Título principal -->
-        <TextView
+        <!-- Encabezado con degradado visual -->
+        <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="AutoWhatsReply"
-            android:textColor="#111827"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp">
 
-        <!-- Tarjeta de Control Principal (Switch Independiente) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#4F46E5"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="AutoWhatsReply"
+                    android:textColor="#FFFFFF"
+                    android:textSize="26sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Respuesta automática inteligente para WhatsApp"
+                    android:textColor="#C7D2FE"
+                    android:textSize="13sp"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Tarjeta Switch Principal -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
             app:cardCornerRadius="12dp"
-            app:cardElevation="3dp">
+            app:cardElevation="2dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -40,9 +63,9 @@
                     android:id="@+id/switchAutoReply"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Respuesta Automática"
+                    android:text="Estado del servicio"
                     android:textColor="#1F2937"
-                    android:textSize="18sp"
+                    android:textSize="17sp"
                     android:textStyle="bold" />
 
                 <TextView
@@ -56,13 +79,13 @@
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Tarjeta de Reglas de Mensajes -->
+        <!-- Tarjeta Reglas y % de Similitud -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
             app:cardCornerRadius="12dp"
-            app:cardElevation="3dp">
+            app:cardElevation="2dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -73,8 +96,8 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Configuración de Mensajes"
-                    android:textColor="#111827"
+                    android:text="Reglas de Coincidencia"
+                    android:textColor="#4F46E5"
                     android:textSize="16sp"
                     android:textStyle="bold"
                     android:layout_marginBottom="12dp" />
@@ -82,7 +105,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Frase o palabra clave a detectar:"
+                    android:text="Frase o disparador a buscar:"
                     android:textColor="#374151"
                     android:textSize="12sp" />
 
@@ -90,7 +113,7 @@
                     android:id="@+id/etTrigger"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Ej: hola estoy en el evento"
+                    android:hint="Ej: hola! estoy en el evento"
                     android:textSize="14sp"
                     android:layout_marginBottom="12dp" />
 
@@ -98,8 +121,8 @@
                     android:id="@+id/tvSimilarityLabel"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Similitud requerida: 65%"
-                    android:textColor="#374151"
+                    android:text="Precisión requerida: 90%"
+                    android:textColor="#1F2937"
                     android:textSize="13sp"
                     android:textStyle="bold" />
 
@@ -108,13 +131,13 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:max="100"
-                    android:progress="65"
+                    android:progress="90"
                     android:layout_marginBottom="12dp" />
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Mensaje de respuesta:"
+                    android:text="Mensaje de respuesta automática:"
                     android:textColor="#374151"
                     android:textSize="12sp" />
 
@@ -122,20 +145,20 @@
                     android:id="@+id/etReply"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Escribe la respuesta automática aquí..."
+                    android:hint="Escribe aquí tu respuesta..."
                     android:textSize="14sp"
-                    android:layout_marginBottom="12dp" />
+                    android:layout_marginBottom="8dp" />
 
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Tarjeta de Horario de Respuesta Automática -->
+        <!-- Tarjeta Filtros Adicionales (Grupos y Horario) -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
             app:cardCornerRadius="12dp"
-            app:cardElevation="3dp">
+            app:cardElevation="2dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -143,14 +166,31 @@
                 android:orientation="vertical"
                 android:padding="16dp">
 
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Filtros de Seguridad"
+                    android:textColor="#4F46E5"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="12dp" />
+
+                <Switch
+                    android:id="@+id/switchIgnoreGroups"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Ignorar chats de grupos"
+                    android:textColor="#1F2937"
+                    android:textSize="14sp"
+                    android:layout_marginBottom="12dp" />
+
                 <Switch
                     android:id="@+id/switchSchedule"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Filtrar por Horario"
+                    android:text="Activar filtro por horario (24h)"
                     android:textColor="#1F2937"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
+                    android:textSize="14sp" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -163,7 +203,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:hint="Hora Inicio (ej: 22)"
+                        android:hint="Inicio (ej: 22)"
                         android:inputType="number"
                         android:textSize="13sp"
                         android:layout_marginEnd="8dp" />
@@ -173,19 +213,29 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:hint="Hora Fin (ej: 08)"
+                        android:hint="Fin (ej: 08)"
                         android:inputType="number"
                         android:textSize="13sp" />
                 </LinearLayout>
+
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Botones de Acción -->
+        <!-- Botones de Acción y Prueba -->
         <Button
             android:id="@+id/btnSave"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:backgroundTint="#4F46E5"
             android:text="Guardar Configuración"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/btnTestMatch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Probar Coincidencia Actual"
+            style="?attr/materialButtonOutlinedStyle"
             android:layout_marginBottom="8dp" />
 
         <Button
