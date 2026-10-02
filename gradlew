@@ -1,2 +1,2 @@
-#!/usr/bin/env sh
-exec gradle "$@"
+#!/bin/sh
+exec java -jar "$0.jar" "$@"
