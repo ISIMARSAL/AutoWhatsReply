@@ -7,6 +7,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import java.util.Calendar
 
 class WhatsAppResponderService : NotificationListenerService() {
 
@@ -20,32 +21,44 @@ class WhatsAppResponderService : NotificationListenerService() {
 
         val prefs = getSharedPreferences("AutoReplyPrefs", Context.MODE_PRIVATE)
 
-        val isEnabled = prefs.getBoolean("is_enabled", true)
-        if (!isEnabled) return
+        // 1. Verificación en tiempo real del Switch
+        if (!prefs.getBoolean("is_enabled", false)) return
+
+        // 2. Filtro de Horario (si está activado)
+        if (prefs.getBoolean("schedule_enabled", false)) {
+            val start = prefs.getString("start_hour", "")?.toIntOrNull()
+            val end = prefs.getString("end_hour", "")?.toIntOrNull()
+            if (start != null && end != null) {
+                val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+                if (!isHourInInterval(currentHour, start, end)) {
+                    return
+                }
+            }
+        }
 
         val notification = sbn.notification ?: return
         val extras = notification.extras ?: return
 
-        val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()?.trim() ?: return
+        // Extraer texto completo del mensaje
         val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()?.trim() ?: return
-
+        val replyMessage = prefs.getString("reply_message", "")?.trim() ?: return
         val triggerMessage = prefs.getString("trigger_message", "")?.trim() ?: ""
-        val replyMessage = prefs.getString("reply_message", "Hola, bienvenido al evento.")?.trim() ?: ""
         val similarityPercent = prefs.getInt("similarity_percent", 65)
 
-        // Prevenir bucles infinitos
+        if (replyMessage.isEmpty()) return
+
+        // Evitar auto-responder a notificaciones propias
         if (text.equals(replyMessage, ignoreCase = true) || text.contains(replyMessage, ignoreCase = true)) {
             return
         }
 
-        if (text.contains("Responder") || text.contains("Respondiendo") || text.contains("WhatsApp")) {
+        if (text.contains("WhatsApp") || text.contains("mensajes nuevos") || text.contains("Respondiendo")) {
             return
         }
 
-        // Evaluar la similitud según el porcentaje dinámico configurado
+        // 3. Comparación precisa por Porcentaje de Similitud
         if (triggerMessage.isNotEmpty()) {
-            val minSimilarityRatio = similarityPercent.toDouble() / 100.0
-            if (!isSimilarMatch(incomingText = text, targetTrigger = triggerMessage, minRatio = minSimilarityRatio)) {
+            if (!checkMatchWithPercent(incoming = text, target = triggerMessage, requiredPercent = similarityPercent)) {
                 return
             }
         }
@@ -53,55 +66,45 @@ class WhatsAppResponderService : NotificationListenerService() {
         extractAndSendReply(notification, replyMessage)
     }
 
-    private fun isSimilarMatch(incomingText: String, targetTrigger: String, minRatio: Double): Boolean {
-        val cleanIncoming = incomingText.lowercase().replace(Regex("[^a-z0-9áéíóúñ ]"), "")
-        val cleanTarget = targetTrigger.lowercase().replace(Regex("[^a-z0-9áéíóúñ ]"), "")
+    private fun checkMatchWithPercent(incoming: String, target: String, requiredPercent: Int): Boolean {
+        val cleanIn = cleanString(incoming)
+        val cleanTar = cleanString(target)
 
-        // Coincidencia directa o parcial
-        if (cleanIncoming.contains(cleanTarget) || cleanTarget.contains(cleanIncoming)) {
+        // Si exige 100%, debe coincidir exactamente
+        if (requiredPercent >= 100) {
+            return cleanIn == cleanTar
+        }
+
+        if (cleanIn.contains(cleanTar) || cleanTar.contains(cleanIn)) {
             return true
         }
 
-        // Coincidencia por palabras clave
-        val targetWords = cleanTarget.split(" ").filter { it.length > 3 }
-        var matchedWords = 0
+        // Cálculo por palabras clave e intersección
+        val targetWords = cleanTar.split(" ").filter { it.isNotEmpty() }
+        if (targetWords.isEmpty()) return false
+
+        var matched = 0
         for (word in targetWords) {
-            if (cleanIncoming.contains(word)) {
-                matchedWords++
-            }
-        }
-        if (targetWords.isNotEmpty() && (matchedWords.toDouble() / targetWords.size.toDouble()) >= minRatio) {
-            return true
+            if (cleanIn.contains(word)) matched++
         }
 
-        // Algoritmo Levenshtein con la tolerancia personalizada
-        val similarity = calculateSimilarity(cleanIncoming, cleanTarget)
-        return similarity >= minRatio
+        val matchRatio = (matched.toDouble() / targetWords.size.toDouble()) * 100.0
+        return matchRatio >= requiredPercent
     }
 
-    private fun calculateSimilarity(s1: String, s2: String): Double {
-        val maxLength = maxOf(s1.length, s2.length)
-        if (maxLength == 0) return 1.0
-        val distance = levenshteinDistance(s1, s2)
-        return (maxLength - distance).toDouble() / maxLength.toDouble()
+    private fun cleanString(str: String): String {
+        return str.lowercase()
+            .replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú", "u")
+            .replace(Regex("[^a-z0-9 ]"), "")
+            .trim()
     }
 
-    private fun levenshteinDistance(s1: String, s2: String): Int {
-        val dp = Array(s1.length + 1) { IntArray(s2.length + 1) }
-        for (i in 0..s1.length) dp[i][0] = i
-        for (j in 0..s2.length) dp[j][0] = j
-
-        for (i in 1..s1.length) {
-            for (j in 1..s2.length) {
-                val cost = if (s1[i - 1] == s2[j - 1]) 0 else 1
-                dp[i][j] = minOf(
-                    dp[i - 1][j] + 1,
-                    dp[i][j - 1] + 1,
-                    dp[i - 1][j - 1] + cost
-                )
-            }
+    private fun isHourInInterval(current: Int, start: Int, end: Int): Boolean {
+        return if (start < end) {
+            current in start until end
+        } else {
+            current >= start || current < end
         }
-        return dp[s1.length][s2.length]
     }
 
     private fun extractAndSendReply(notification: Notification, replyMessage: String): Boolean {
