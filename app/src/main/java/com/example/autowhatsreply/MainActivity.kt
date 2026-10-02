@@ -1,7 +1,10 @@
 package com.example.autowhatsreply
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
@@ -11,6 +14,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.NotificationCompat
 
 class MainActivity : AppCompatActivity() {
 
@@ -39,29 +43,29 @@ class MainActivity : AppCompatActivity() {
         // Cargar datos
         val isEnabled = prefs.getBoolean("is_enabled", false)
         switchAutoReply.isChecked = isEnabled
-        updateStatusText(tvStatus, isEnabled)
+        updateStatusAndNotification(isEnabled, tvStatus)
 
         etTrigger.setText(prefs.getString("trigger_message", ""))
         etReply.setText(prefs.getString("reply_message", ""))
 
-        val currentSimilarity = prefs.getInt("similarity_percent", 90)
+        val currentSimilarity = prefs.getInt("similarity_percent", 70)
         sbSimilarity.progress = currentSimilarity
-        tvSimilarityLabel.text = "Precisión requerida: $currentSimilarity%"
+        tvSimilarityLabel.text = "Porcentaje de similitud: $currentSimilarity%"
 
         switchIgnoreGroups.isChecked = prefs.getBoolean("ignore_groups", true)
         switchSchedule.isChecked = prefs.getBoolean("schedule_enabled", false)
         etStartHour.setText(prefs.getString("start_hour", ""))
         etEndHour.setText(prefs.getString("end_hour", ""))
 
-        // Switch ON/OFF instantáneo
+        // Interruptor ON/OFF instantáneo y actualización de notificación fijos
         switchAutoReply.setOnCheckedChangeListener { _, isChecked ->
             prefs.edit().putBoolean("is_enabled", isChecked).apply()
-            updateStatusText(tvStatus, isChecked)
+            updateStatusAndNotification(isChecked, tvStatus)
         }
 
         sbSimilarity.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                tvSimilarityLabel.text = "Precisión requerida: $progress%"
+                tvSimilarityLabel.text = "Porcentaje de similitud: $progress%"
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
@@ -70,7 +74,7 @@ class MainActivity : AppCompatActivity() {
         btnSave.setOnClickListener {
             val reply = etReply.text.toString().trim()
             if (reply.isEmpty()) {
-                Toast.makeText(this, "Por favor introduce una respuesta válida", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Por favor escribe un mensaje de respuesta", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -84,38 +88,37 @@ class MainActivity : AppCompatActivity() {
                 .putString("end_hour", etEndHour.text.toString().trim())
                 .apply()
 
-            Toast.makeText(this, "Ajustes guardados correctamente", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Ajustes guardados con éxito", Toast.LENGTH_SHORT).show()
         }
 
-        // Función para probar mensajes de prueba sin necesitar otro teléfono
         btnTestMatch.setOnClickListener {
             val trigger = etTrigger.text.toString().trim()
             val requiredPercent = sbSimilarity.progress
 
             if (trigger.isEmpty()) {
-                Toast.makeText(this, "Escribe primero un mensaje disparador arriba", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Escribe primero un mensaje disparador", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
             val input = EditText(this)
-            input.hint = "Escribe un mensaje de prueba (ej: hola!)"
+            input.hint = "Ej: hola! estoy en el evnto"
 
             AlertDialog.Builder(this)
-                .setTitle("Probar Coincidencia")
-                .setMessage("Ingresa la frase de simulación:")
+                .setTitle("Probar Algoritmo de Similitud")
+                .setMessage("Frase esperada: '$trigger' ($requiredPercent%)\n\nIngresa la frase a probar:")
                 .setView(input)
-                .setPositiveButton("Evaluar") { _, _ ->
+                .setPositiveButton("Probar") { _, _ ->
                     val testText = input.text.toString()
                     val isMatch = WhatsAppResponderService.evaluateSimilarity(testText, trigger, requiredPercent)
                     val resultMessage = if (isMatch) {
-                        "¡ÉXITO! La frase '$testText' SÍ activa la auto-respuesta."
+                        "¡ÉXITO! La frase '$testText' SÍ activa la respuesta automática."
                     } else {
-                        "RECHAZADO: La frase '$testText' NO alcanza el $requiredPercent% de similitud exigido."
+                        "RECHAZADO: La frase '$testText' NO supera el $requiredPercent% de similitud."
                     }
                     AlertDialog.Builder(this)
-                        .setTitle("Resultado de la Prueba")
+                        .setTitle("Resultado")
                         .setMessage(resultMessage)
-                        .setPositiveButton("OK", null)
+                        .setPositiveButton("Entendido", null)
                         .show()
                 }
                 .setNegativeButton("Cancelar", null)
@@ -127,13 +130,36 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun updateStatusText(tv: TextView, isEnabled: Boolean) {
+    private fun updateStatusAndNotification(isEnabled: Boolean, tv: TextView) {
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val channelId = "autowhatsreply_status_channel"
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                channelId,
+                "Estado del servicio AutoWhatsReply",
+                NotificationManager.IMPORTANCE_LOW
+            )
+            notificationManager.createNotificationChannel(channel)
+        }
+
         if (isEnabled) {
-            tv.text = "Estado: ACTIVADO"
+            tv.text = "Estado: ACTIVADO (Escuchando WhatsApp)"
             tv.setTextColor(0xFF10B981.toInt())
+
+            val notification = NotificationCompat.Builder(this, channelId)
+                .setContentTitle("AutoWhatsReply Activo")
+                .setContentText("El servicio de respuesta automática está funcionando.")
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setOngoing(true)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .build()
+
+            notificationManager.notify(1001, notification)
         } else {
             tv.text = "Estado: DESACTIVADO"
             tv.setTextColor(0xFF6B7280.toInt())
+            notificationManager.cancel(1001)
         }
     }
 }
