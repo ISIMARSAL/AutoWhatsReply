@@ -59,7 +59,7 @@
         <!-- Tarjeta de Reglas de Mensajes -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
-            android:layout_height="wrap_wrap"
+            android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
             app:cardCornerRadius="12dp"
             app:cardElevation="3dp">
@@ -132,7 +132,7 @@
         <!-- Tarjeta de Horario de Respuesta Automática -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
-            android:layout_height="wrap_wrap"
+            android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
             app:cardCornerRadius="12dp"
             app:cardElevation="3dp">
