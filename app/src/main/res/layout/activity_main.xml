@@ -1,51 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
-    <LinearLayout
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_wrap"
+        android:text="Configurar Auto-Respuesta"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="20dp" />
+
+    <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switchEnable"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Activar Autorrespuesta"
-            android:textSize="18sp" />
-        <Button
-            android:id="@+id/btnPermission"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Conceder Permiso de Notificaciones" />
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:hint="Frase a coincidir (Ej: hola)">
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etTriggerText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="text" />
-        </com.google.android.material.textfield.TextInputLayout>
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:hint="Mensaje de respuesta automática">
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etReplyText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textMultiLine" />
-        </com.google.android.material.textfield.TextInputLayout>
-        <Button
-            android:id="@+id/btnSave"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="Guardar Configuración" />
-    </LinearLayout>
-</ScrollView>
+        android:text="Responder solo cuando el mensaje recibido contenga: (Déjalo vacío para responder a todo)"
+        android:textSize="12sp" />
+
+    <EditText
+        android:id="@+id/etTrigger"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Ej: precio, horario, info..."
+        android:layout_marginBottom="15dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Mensaje de respuesta automática:"
+        android:textSize="12sp" />
+
+    <EditText
+        android:id="@+id/etReply"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Escribe aquí tu respuesta personalizada..."
+        android:layout_marginBottom="20dp" />
+
+    <Button
+        android:id="@+id/btnSave"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Guardar Configuración"
+        android:layout_marginBottom="10dp" />
+
+    <Button
+        android:id="@+id/btnPermission"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Abrir Permisos de Notificación" />
+
+</LinearLayout>
