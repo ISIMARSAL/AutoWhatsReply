@@ -13,6 +13,7 @@
         android:textStyle="bold"
         android:layout_marginBottom="15dp" />
 
+    <!-- Interruptor para activar/desactivar -->
     <Switch
         android:id="@+id/switchAutoReply"
         android:layout_width="match_parent"
@@ -33,23 +34,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Ej: hola estoy en el evento"
-        android:layout_marginBottom="15dp" />
-
-    <!-- Nivel de similitud requerida -->
-    <TextView
-        android:id="@+id/tvSimilarityLabel"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Nivel de similitud requerido: 65%"
-        android:textStyle="bold"
-        android:textSize="13sp" />
-
-    <SeekBar
-        android:id="@+id/sbSimilarity"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:max="100"
-        android:progress="65"
         android:layout_marginBottom="15dp" />
 
     <TextView
