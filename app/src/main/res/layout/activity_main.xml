@@ -7,50 +7,56 @@
     android:fillViewport="true">
 
     <LinearLayout
-        android:layout_width="match_Para resolver los problemas de precisión y efectividad, y además añadir un diseño moderno con las nuevas funciones solicitadas, aplicaremos los siguientes cambios clave:
-
-### Mejoras clave implementadas
-
-1. **Fiabilidad en notificaciones**: Se procesa el hilo de mensajes usando `Notification.EXTRA_MESSAGING_STYLE_USER` y `EXTRA_TEXT` para leer mensajes individuales reales y no notificaciones agrupadas del sistema.
-2. **Switch ON/OFF instantáneo**: Guarda el estado inmediatamente al cambiar el interruptor en tiempo real sin requerir presionar "Guardar".
-3. **Lógica de porcentaje corregida**: La comparación ahora calcula el porcentaje de coincidencias de palabras clave e insensibilidad a tildes/mayúsculas. Si está al 100%, exige que la frase coincida al 100%.
-4. **Campos limpios por defecto**: Los `EditText` usan `hint` dinámico sin texto precargado en `android:text`.
-5. **Programación por horario**: Puedes activar una franja horaria (por ejemplo, de 22:00 a 08:00) para que solo responda durante ese rango.
-6. **Diseño atractivo**: Uso de un contenedor `CardView` estilizado con bordes suaves, mejor tipografía y disposición limpia.
-
----
-
-### Paso 1: Actualizar `activity_main.xml`
-
-Ejecuta el siguiente comando en Git Bash para aplicar la nueva interfaz rediseñada:
-
-```bash
-cat << 'EOF' > app/src/main/res/layout/activity_main.xml
-<?xml version="1.0" encoding="utf-8"?>
-<ScrollView android:background="#F4F6F9" android:layout_height="match_parent" android:layout_width="match_parent" android:padding="16dp" xmlns:android="[http://schemas.android.com/apk/res/android](http://schemas.android.com/apk/res/android)" xmlns:app="[http://schemas.android.com/apk/res-auto](http://schemas.android.com/apk/res-auto)">
-
-    <LinearLayout android:layout_height="wrap_content" android:layout_width="match_parent" android:orientation="vertical">
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
 
         <!-- Título principal -->
-        <TextView android:layout_height="wrap_wrap" android:layout_marginBottom="16dp" android:layout_width="match_parent" android:text="AutoWhatsReply" android:textColor="#111827" android:textSize="24sp" android:textStyle="bold"/>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="AutoWhatsReply"
+            android:textColor="#111827"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="16dp" />
 
-        <!-- Tarjeta de Control Principal -->
+        <!-- Tarjeta de Control Principal (Switch Independiente) -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
-            android:layout_height="wrap_wrap"
+            android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
             app:cardCornerRadius="12dp"
             app:cardElevation="3dp">
 
-            <LinearLayout android:layout_height="wrap_wrap" android:layout_width="match_parent" android:orientation="vertical" android:padding="16dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
 
-                <Switch android:id="@+id/switchAutoReply" android:layout_height="wrap_wrap" android:layout_width="match_parent" android:text="Respuesta Automática" android:textColor="#1F2937" android:textSize="18sp" android:textStyle="bold"/>
+                <Switch
+                    android:id="@+id/switchAutoReply"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Respuesta Automática"
+                    android:textColor="#1F2937"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
 
-                <TextView android:id="@+id/tvStatus" android:layout_height="wrap_wrap" android:layout_marginTop="4dp" android:layout_width="match_parent" android:text="Estado: Desactivado" android:textColor="#6B7280" android:textSize="13sp"/>
+                <TextView
+                    android:id="@+id/tvStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Estado: Desactivado"
+                    android:textColor="#6B7280"
+                    android:textSize="13sp"
+                    android:layout_marginTop="4dp" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Tarjeta de Reglas de Respuesta -->
+        <!-- Tarjeta de Reglas de Mensajes -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_wrap"
@@ -58,26 +64,72 @@ cat << 'EOF' > app/src/main/res/layout/activity_main.xml
             app:cardCornerRadius="12dp"
             app:cardElevation="3dp">
 
-            <LinearLayout android:layout_height="wrap_wrap" android:layout_width="match_parent" android:orientation="vertical" android:padding="16dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
 
-                <TextView android:layout_height="wrap_wrap" android:layout_marginBottom="12dp" android:layout_width="match_parent" android:text="Configuración de Mensajes" android:textColor="#111827" android:textSize="16sp" android:textStyle="bold"/>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Configuración de Mensajes"
+                    android:textColor="#111827"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="12dp" />
 
-                <TextView android:layout_height="wrap_wrap" android:layout_width="match_parent" android:text="Frase o palabra clave a detectar:" android:textColor="#374151" android:textSize="12sp"/>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Frase o palabra clave a detectar:"
+                    android:textColor="#374151"
+                    android:textSize="12sp" />
 
-                <EditText android:hint="Ej: hola estoy en el evento (vacío para responder a todo)" android:id="@+id/etTrigger" android:layout_height="wrap_wrap" android:layout_marginBottom="12dp" android:layout_width="match_parent" android:textSize="14sp"/>
+                <EditText
+                    android:id="@+id/etTrigger"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Ej: hola estoy en el evento"
+                    android:textSize="14sp"
+                    android:layout_marginBottom="12dp" />
 
-                <TextView android:id="@+id/tvSimilarityLabel" android:layout_height="wrap_wrap" android:layout_width="match_parent" android:text="Similitud requerida: 65%" android:textColor="#374151" android:textSize="13sp" android:textStyle="bold"/>
+                <TextView
+                    android:id="@+id/tvSimilarityLabel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Similitud requerida: 65%"
+                    android:textColor="#374151"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
 
-                <SeekBar android:id="@+id/sbSimilarity" android:layout_height="wrap_wrap" android:layout_marginBottom="12dp" android:layout_width="match_parent" android:max="100" android:progress="65"/>
+                <SeekBar
+                    android:id="@+id/sbSimilarity"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:max="100"
+                    android:progress="65"
+                    android:layout_marginBottom="12dp" />
 
-                <TextView android:layout_height="wrap_wrap" android:layout_width="match_parent" android:text="Mensaje de respuesta:" android:textColor="#374151" android:textSize="12sp"/>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Mensaje de respuesta:"
+                    android:textColor="#374151"
+                    android:textSize="12sp" />
 
-                <EditText android:hint="Escribe la respuesta automática aquí..." android:id="@+id/etReply" android:layout_height="wrap_wrap" android:layout_marginBottom="12dp" android:layout_width="match_parent" android:textSize="14sp"/>
+                <EditText
+                    android:id="@+id/etReply"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Escribe la respuesta automática aquí..."
+                    android:textSize="14sp"
+                    android:layout_marginBottom="12dp" />
 
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Tarjeta de Ajuste Horario -->
+        <!-- Tarjeta de Horario de Respuesta Automática -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_wrap"
@@ -85,23 +137,63 @@ cat << 'EOF' > app/src/main/res/layout/activity_main.xml
             app:cardCornerRadius="12dp"
             app:cardElevation="3dp">
 
-            <LinearLayout android:layout_height="wrap_wrap" android:layout_width="match_parent" android:orientation="vertical" android:padding="16dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
 
-                <Switch android:id="@+id/switchSchedule" android:layout_height="wrap_wrap" android:layout_width="match_parent" android:text="Filtrar por Horario" android:textColor="#1F2937" android:textSize="15sp" android:textStyle="bold"/>
+                <Switch
+                    android:id="@+id/switchSchedule"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Filtrar por Horario"
+                    android:textColor="#1F2937"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
 
-                <LinearLayout android:layout_height="wrap_wrap" android:layout_marginTop="8dp" android:layout_width="match_parent" android:orientation="horizontal">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp">
 
-                    <EditText android:hint="Hora Inicio (ej: 22)" android:id="@+id/etStartHour" android:inputType="number" android:layout_height="wrap_wrap" android:layout_weight="1" android:layout_width="0dp" android:textSize="13sp"/>
+                    <EditText
+                        android:id="@+id/etStartHour"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:hint="Hora Inicio (ej: 22)"
+                        android:inputType="number"
+                        android:textSize="13sp"
+                        android:layout_marginEnd="8dp" />
 
-                    <EditText android:hint="Hora Fin (ej: 08)" android:id="@+id/etEndHour" android:inputType="number" android:layout_height="wrap_wrap" android:layout_weight="1" android:layout_width="0dp" android:textSize="13sp"/>
+                    <EditText
+                        android:id="@+id/etEndHour"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:hint="Hora Fin (ej: 08)"
+                        android:inputType="number"
+                        android:textSize="13sp" />
                 </LinearLayout>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
         <!-- Botones de Acción -->
-        <Button android:id="@+id/btnSave" android:layout_height="wrap_wrap" android:layout_marginBottom="8dp" android:layout_width="match_parent" android:text="Guardar Configuración"/>
+        <Button
+            android:id="@+id/btnSave"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Guardar Configuración"
+            android:layout_marginBottom="8dp" />
 
-        <Button android:id="@+id/btnPermission" android:layout_height="wrap_wrap" android:layout_width="match_parent" android:text="Permisos de Notificación" style="?attr/materialButtonOutlinedStyle"/>
+        <Button
+            android:id="@+id/btnPermission"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Permisos de Notificación"
+            style="?attr/materialButtonOutlinedStyle" />
 
     </LinearLayout>
 </ScrollView>
