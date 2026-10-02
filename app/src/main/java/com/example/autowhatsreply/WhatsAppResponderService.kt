@@ -20,7 +20,6 @@ class WhatsAppResponderService : NotificationListenerService() {
 
         val prefs = getSharedPreferences("AutoReplyPrefs", Context.MODE_PRIVATE)
 
-        // 1. Verificar si la auto-respuesta está ACTIVADA
         val isEnabled = prefs.getBoolean("is_enabled", true)
         if (!isEnabled) return
 
@@ -32,8 +31,9 @@ class WhatsAppResponderService : NotificationListenerService() {
 
         val triggerMessage = prefs.getString("trigger_message", "")?.trim() ?: ""
         val replyMessage = prefs.getString("reply_message", "Hola, bienvenido al evento.")?.trim() ?: ""
+        val similarityPercent = prefs.getInt("similarity_percent", 65)
 
-        // Prevent Loop: Ignorar si el mensaje entrante coincide con nuestra propia respuesta
+        // Prevenir bucles infinitos
         if (text.equals(replyMessage, ignoreCase = true) || text.contains(replyMessage, ignoreCase = true)) {
             return
         }
@@ -42,9 +42,10 @@ class WhatsAppResponderService : NotificationListenerService() {
             return
         }
 
-        // 2. Comprobar la SIMILITUD del mensaje recibido
+        // Evaluar la similitud según el porcentaje dinámico configurado
         if (triggerMessage.isNotEmpty()) {
-            if (!isSimilarMatch(incomingText = text, targetTrigger = triggerMessage)) {
+            val minSimilarityRatio = similarityPercent.toDouble() / 100.0
+            if (!isSimilarMatch(incomingText = text, targetTrigger = triggerMessage, minRatio = minSimilarityRatio)) {
                 return
             }
         }
@@ -52,19 +53,16 @@ class WhatsAppResponderService : NotificationListenerService() {
         extractAndSendReply(notification, replyMessage)
     }
 
-    /**
-     * Evalúa si un mensaje recibido es lo suficientemente similar a la frase objetivo.
-     */
-    private fun isSimilarMatch(incomingText: String, targetTrigger: String): Boolean {
+    private fun isSimilarMatch(incomingText: String, targetTrigger: String, minRatio: Double): Boolean {
         val cleanIncoming = incomingText.lowercase().replace(Regex("[^a-z0-9áéíóúñ ]"), "")
         val cleanTarget = targetTrigger.lowercase().replace(Regex("[^a-z0-9áéíóúñ ]"), "")
 
-        // a) Coincidencia directa o parcial
+        // Coincidencia directa o parcial
         if (cleanIncoming.contains(cleanTarget) || cleanTarget.contains(cleanIncoming)) {
             return true
         }
 
-        // b) Coincidencia por palabras clave (ej: "hola", "evento")
+        // Coincidencia por palabras clave
         val targetWords = cleanTarget.split(" ").filter { it.length > 3 }
         var matchedWords = 0
         for (word in targetWords) {
@@ -72,13 +70,13 @@ class WhatsAppResponderService : NotificationListenerService() {
                 matchedWords++
             }
         }
-        if (targetWords.isNotEmpty() && (matchedWords.toDouble() / targetWords.size.toDouble()) >= 0.5) {
+        if (targetWords.isNotEmpty() && (matchedWords.toDouble() / targetWords.size.toDouble()) >= minRatio) {
             return true
         }
 
-        // c) Algoritmo de distancia de Levenshtein (tolerancia a errores tipográficos)
+        // Algoritmo Levenshtein con la tolerancia personalizada
         val similarity = calculateSimilarity(cleanIncoming, cleanTarget)
-        return similarity >= 0.65 // 65% de similitud suficiente
+        return similarity >= minRatio
     }
 
     private fun calculateSimilarity(s1: String, s2: String): Double {
