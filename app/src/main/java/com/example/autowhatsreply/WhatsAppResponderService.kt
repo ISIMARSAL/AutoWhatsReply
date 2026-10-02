@@ -7,18 +7,12 @@ import android.content.Intent
 import android.os.Bundle
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
-import java.util.Calendar
 
 class WhatsAppResponderService : NotificationListenerService() {
 
     companion object {
         private val lastProcessedMessages = HashMap<String, Long>()
 
-        /**
-         * Algoritmo Fuzzy Match:
-         * Calcula el porcentaje de similitud real permitiendo variaciones de 1 o 2 letras,
-         * errores tipográficos y diferencia de orden de palabras.
-         */
         fun calculateMatchPercentage(incoming: String, target: String): Int {
             val cleanIn = cleanString(incoming)
             val cleanTar = cleanString(target)
@@ -26,24 +20,20 @@ class WhatsAppResponderService : NotificationListenerService() {
             if (cleanIn.isEmpty() || cleanTar.isEmpty()) return 0
             if (cleanIn == cleanTar) return 100
 
-            // 1. Si la frase o palabra objetivo está dentro del mensaje recibido
             if (cleanIn.contains(cleanTar) || cleanTar.contains(cleanIn)) {
                 val ratio = minOf(cleanIn.length, cleanTar.length).toDouble() / maxOf(cleanIn.length, cleanTar.length).toDouble()
                 val score = (ratio * 100).toInt()
                 if (score >= 50) return maxOf(score, 85)
             }
 
-            // 2. Distancia Levenshtein directa sobre la cadena completa
             val maxLen = maxOf(cleanIn.length, cleanTar.length)
             val dist = levenshteinDistance(cleanIn, cleanTar)
             val directScore = (((maxLen - dist).toDouble() / maxLen.toDouble()) * 100).toInt()
 
-            // Si la diferencia es solo de 1 o 2 letras (ej. quitar/cambiar una letra)
             if (dist <= 2) {
                 return maxOf(directScore, 80)
             }
 
-            // 3. Comparación parcial por subsecuencia / palabras clave
             val inWords = cleanIn.split(" ").filter { it.isNotEmpty() }
             val tarWords = cleanTar.split(" ").filter { it.isNotEmpty() }
 
@@ -66,7 +56,6 @@ class WhatsAppResponderService : NotificationListenerService() {
             }
 
             val tokenScore = ((wordMatches / tarWords.size.toDouble()) * 100).toInt()
-
             return maxOf(directScore, tokenScore).coerceIn(0, 100)
         }
 
@@ -114,12 +103,13 @@ class WhatsAppResponderService : NotificationListenerService() {
         val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()?.trim() ?: ""
         val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()?.trim() ?: return
 
-        // Anti-duplicados por 10 segundos
+        // Filtro de tiempo de espera dinámico
+        val cooldownSeconds = prefs.getInt("cooldown_seconds", 10)
         val messageKey = "$title:$text"
         val currentTime = System.currentTimeMillis()
         val lastTime = lastProcessedMessages[messageKey] ?: 0L
 
-        if (currentTime - lastTime < 10000) {
+        if (currentTime - lastTime < (cooldownSeconds * 1000L)) {
             return
         }
 
@@ -130,25 +120,12 @@ class WhatsAppResponderService : NotificationListenerService() {
             }
         }
 
-        // Horarios
-        if (prefs.getBoolean("schedule_enabled", false)) {
-            val start = prefs.getString("start_hour", "")?.toIntOrNull()
-            val end = prefs.getString("end_hour", "")?.toIntOrNull()
-            if (start != null && end != null) {
-                val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-                if (!isHourInInterval(currentHour, start, end)) {
-                    return
-                }
-            }
-        }
-
         val replyMessage = prefs.getString("reply_message", "")?.trim() ?: return
         val triggerMessage = prefs.getString("trigger_message", "")?.trim() ?: ""
         val requiredPercent = prefs.getInt("similarity_percent", 50)
 
         if (replyMessage.isEmpty()) return
 
-        // Evitar responder a sí mismo
         if (text.equals(replyMessage, ignoreCase = true) || text.contains(replyMessage, ignoreCase = true)) {
             return
         }
@@ -157,7 +134,6 @@ class WhatsAppResponderService : NotificationListenerService() {
             return
         }
 
-        // Evaluación de similitud con el motor corregido
         if (triggerMessage.isNotEmpty()) {
             val score = calculateMatchPercentage(text, triggerMessage)
             if (score < requiredPercent) {
@@ -167,14 +143,6 @@ class WhatsAppResponderService : NotificationListenerService() {
 
         if (extractAndSendReply(notification, replyMessage)) {
             lastProcessedMessages[messageKey] = currentTime
-        }
-    }
-
-    private fun isHourInInterval(current: Int, start: Int, end: Int): Boolean {
-        return if (start < end) {
-            current in start until end
-        } else {
-            current >= start || current < end
         }
     }
 

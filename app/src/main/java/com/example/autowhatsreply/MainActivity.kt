@@ -12,7 +12,6 @@ import android.widget.SeekBar
 import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
 
@@ -32,14 +31,12 @@ class MainActivity : AppCompatActivity() {
         val sbSimilarity = findViewById<SeekBar>(R.id.sbSimilarity)
 
         val switchIgnoreGroups = findViewById<Switch>(R.id.switchIgnoreGroups)
-        val switchSchedule = findViewById<Switch>(R.id.switchSchedule)
-        val etStartHour = findViewById<EditText>(R.id.etStartHour)
-        val etEndHour = findViewById<EditText>(R.id.etEndHour)
+        val etCooldown = findViewById<EditText>(R.id.etCooldown)
 
         val btnSave = findViewById<Button>(R.id.btnSave)
-        val btnTestMatch = findViewById<Button>(R.id.btnTestMatch)
         val btnPermission = findViewById<Button>(R.id.btnPermission)
 
+        // Cargar ajustes guardados
         val isEnabled = prefs.getBoolean("is_enabled", false)
         switchAutoReply.isChecked = isEnabled
         updateStatusAndNotification(isEnabled, tvStatus)
@@ -47,14 +44,12 @@ class MainActivity : AppCompatActivity() {
         etTrigger.setText(prefs.getString("trigger_message", ""))
         etReply.setText(prefs.getString("reply_message", ""))
 
-        val currentSimilarity = prefs.getInt("similarity_percent", 70)
+        val currentSimilarity = prefs.getInt("similarity_percent", 50)
         sbSimilarity.progress = currentSimilarity
-        tvSimilarityLabel.text = "Similitud requerida: $currentSimilarity%"
+        tvSimilarityLabel.text = "Sensibilidad de similitud: $currentSimilarity%"
 
         switchIgnoreGroups.isChecked = prefs.getBoolean("ignore_groups", true)
-        switchSchedule.isChecked = prefs.getBoolean("schedule_enabled", false)
-        etStartHour.setText(prefs.getString("start_hour", ""))
-        etEndHour.setText(prefs.getString("end_hour", ""))
+        etCooldown.setText(prefs.getInt("cooldown_seconds", 10).toString())
 
         switchAutoReply.setOnCheckedChangeListener { _, isChecked ->
             prefs.edit().putBoolean("is_enabled", isChecked).apply()
@@ -63,7 +58,7 @@ class MainActivity : AppCompatActivity() {
 
         sbSimilarity.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                tvSimilarityLabel.text = "Similitud requerida: $progress%"
+                tvSimilarityLabel.text = "Sensibilidad de similitud: $progress%"
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
@@ -76,50 +71,17 @@ class MainActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
+            val cooldownSecs = etCooldown.text.toString().toIntOrNull() ?: 10
+
             prefs.edit()
                 .putString("trigger_message", etTrigger.text.toString().trim())
                 .putString("reply_message", reply)
                 .putInt("similarity_percent", sbSimilarity.progress)
                 .putBoolean("ignore_groups", switchIgnoreGroups.isChecked)
-                .putBoolean("schedule_enabled", switchSchedule.isChecked)
-                .putString("start_hour", etStartHour.text.toString().trim())
-                .putString("end_hour", etEndHour.text.toString().trim())
+                .putInt("cooldown_seconds", cooldownSecs)
                 .apply()
 
-            Toast.makeText(this, "Configuración guardada correctamente", Toast.LENGTH_SHORT).show()
-        }
-
-        btnTestMatch.setOnClickListener {
-            val trigger = etTrigger.text.toString().trim()
-            val requiredPercent = sbSimilarity.progress
-
-            if (trigger.isEmpty()) {
-                Toast.makeText(this, "Escribe primero un mensaje en la casilla disparadora", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            val input = EditText(this)
-            input.hint = "Escribe una frase de prueba"
-
-            AlertDialog.Builder(this)
-                .setTitle("Probador de Similitud")
-                .setMessage("Frase configurada: '$trigger'\nExigencia: $requiredPercent%\n\nIntroduce el mensaje a evaluar:")
-                .setView(input)
-                .setPositiveButton("Evaluar") { _, _ ->
-                    val testText = input.text.toString()
-                    val score = WhatsAppResponderService.calculateMatchPercentage(testText, trigger)
-                    val isMatch = score >= requiredPercent
-                    val resultMessage = "Puntuación obtenida: $score%\nRequerido: $requiredPercent%\n\nResultado: " +
-                            if (isMatch) "¡SÍ SE ACTIVA!" else "NO ALCANZA EL MÍNIMO"
-
-                    AlertDialog.Builder(this)
-                        .setTitle("Resultado de Similitud")
-                        .setMessage(resultMessage)
-                        .setPositiveButton("Aceptar", null)
-                        .show()
-                }
-                .setNegativeButton("Cancelar", null)
-                .show()
+            Toast.makeText(this, "Configuración guardada para Eventos Salinas", Toast.LENGTH_SHORT).show()
         }
 
         btnPermission.setOnClickListener {
@@ -146,7 +108,7 @@ class MainActivity : AppCompatActivity() {
 
             val notification = NotificationCompat.Builder(this, channelId)
                 .setContentTitle("AutoWhatsReply Activo")
-                .setContentText("Escuchando notificaciones en segundo plano")
+                .setContentText("Escuchando notificaciones para Eventos Salinas")
                 .setSmallIcon(android.R.drawable.ic_dialog_info)
                 .setOngoing(true)
                 .setPriority(NotificationCompat.PRIORITY_LOW)

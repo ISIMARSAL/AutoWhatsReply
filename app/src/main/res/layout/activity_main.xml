@@ -12,49 +12,58 @@
         android:orientation="vertical"
         android:padding="20dp">
 
-        <!-- Header -->
-        <LinearLayout
+        <!-- Encabezado Estilizado -->
+        <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginBottom="20dp">
+            android:layout_marginBottom="20dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="2dp">
 
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="AutoWhatsReply"
-                android:textColor="#0F172A"
-                android:textSize="26sp"
-                android:textStyle="bold" />
+                android:background="#6366F1"
+                android:orientation="vertical"
+                android:padding="22dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Autorespuesta inteligente para WhatsApp"
-                android:textColor="#64748B"
-                android:textSize="13sp"
-                android:layout_marginTop="2dp" />
-        </LinearLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="⚡ AutoWhatsReply"
+                    android:textColor="#FFFFFF"
+                    android:textSize="24sp"
+                    android:textStyle="bold" />
 
-        <!-- Switch de Activación Directa -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Gestión de respuestas automáticas"
+                    android:textColor="#E0E7FF"
+                    android:textSize="13sp"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Switch Principal de Servicio -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
-            app:cardCornerRadius="14dp"
+            app:cardCornerRadius="16dp"
             app:cardElevation="1dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="18dp">
 
                 <Switch
                     android:id="@+id/switchAutoReply"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Servicio Activo"
+                    android:text="Activar Autorespuesta"
                     android:textColor="#0F172A"
                     android:textSize="16sp"
                     android:textStyle="bold" />
@@ -70,33 +79,33 @@
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Tarjeta de Reglas y Porcentaje -->
+        <!-- Configuración del Mensaje y Similitud -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
-            app:cardCornerRadius="14dp"
+            app:cardCornerRadius="16dp"
             app:cardElevation="1dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="18dp">
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Configuración de Mensaje"
+                    android:text="Regla de Respuesta"
                     android:textColor="#4F46E5"
                     android:textSize="15sp"
                     android:textStyle="bold"
-                    android:layout_marginBottom="12dp" />
+                    android:layout_marginBottom="14dp" />
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Palabra o frase clave:"
+                    android:text="Frase o palabra clave recibida:"
                     android:textColor="#334155"
                     android:textSize="12sp" />
 
@@ -104,15 +113,15 @@
                     android:id="@+id/etTrigger"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Ej: hola estoy en el evento"
+                    android:hint="Ej: evento"
                     android:textSize="14sp"
-                    android:layout_marginBottom="12dp" />
+                    android:layout_marginBottom="14dp" />
 
                 <TextView
                     android:id="@+id/tvSimilarityLabel"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Similitud requerida: 70%"
+                    android:text="Sensibilidad de similitud: 50%"
                     android:textColor="#0F172A"
                     android:textSize="13sp"
                     android:textStyle="bold" />
@@ -122,13 +131,13 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:max="100"
-                    android:progress="70"
-                    android:layout_marginBottom="12dp" />
+                    android:progress="50"
+                    android:layout_marginBottom="14dp" />
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Respuesta automática:"
+                    android:text="Mensaje automático con el que responderás:"
                     android:textColor="#334155"
                     android:textSize="12sp" />
 
@@ -136,104 +145,92 @@
                     android:id="@+id/etReply"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Ej: Hola! Te responderé enseguida."
+                    android:hint="Escribe el mensaje de respuesta aquí..."
                     android:textSize="14sp" />
 
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Filtros -->
+        <!-- Ajustes Adicionales -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:cardCornerRadius="14dp"
+            android:layout_marginBottom="20dp"
+            app:cardCornerRadius="16dp"
             app:cardElevation="1dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="18dp">
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Filtros Adicionales"
+                    android:text="Ajustes de Seguridad y Filtros"
                     android:textColor="#4F46E5"
                     android:textSize="15sp"
                     android:textStyle="bold"
-                    android:layout_marginBottom="12dp" />
+                    android:layout_marginBottom="14dp" />
 
                 <Switch
                     android:id="@+id/switchIgnoreGroups"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Ignorar chats grupales"
+                    android:text="Ignorar grupos de WhatsApp"
                     android:textColor="#334155"
                     android:textSize="13sp"
-                    android:layout_marginBottom="10dp" />
+                    android:layout_marginBottom="12dp" />
 
-                <Switch
-                    android:id="@+id/switchSchedule"
+                <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Horario de respuesta (24h)"
+                    android:text="Tiempo de espera entre respuestas por usuario (segundos):"
                     android:textColor="#334155"
-                    android:textSize="13sp" />
+                    android:textSize="12sp" />
 
-                <LinearLayout
+                <EditText
+                    android:id="@+id/etCooldown"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="8dp">
-
-                    <EditText
-                        android:id="@+id/etStartHour"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:hint="Hora inicio (ej: 22)"
-                        android:inputType="number"
-                        android:textSize="13sp"
-                        android:layout_marginEnd="8dp" />
-
-                    <EditText
-                        android:id="@+id/etEndHour"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:hint="Hora fin (ej: 08)"
-                        android:inputType="number"
-                        android:textSize="13sp" />
-                </LinearLayout>
+                    android:hint="Ej: 10"
+                    android:inputType="number"
+                    android:textSize="14sp" />
 
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Botones principales -->
+        <!-- Botones -->
         <Button
             android:id="@+id/btnSave"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="52dp"
             android:backgroundTint="#4F46E5"
-            android:text="Guardar Cambios"
-            android:layout_marginBottom="8dp" />
-
-        <Button
-            android:id="@+id/btnTestMatch"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Probar Coincidencia"
-            style="?attr/materialButtonOutlinedStyle"
-            android:layout_marginBottom="8dp" />
+            android:text="Guardar Configuración"
+            android:textAllCaps="false"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="10dp" />
 
         <Button
             android:id="@+id/btnPermission"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Permisos de Notificación"
-            style="?attr/materialButtonOutlinedStyle" />
+            android:text="Conceder Permisos de Notificaciones"
+            android:textAllCaps="false"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Pie de página personalizado -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="hecho con ❤️ de isi para eventos salinas"
+            android:textColor="#94A3B8"
+            android:textSize="12sp"
+            android:gravity="center"
+            android:paddingBottom="12dp" />
 
     </LinearLayout>
 </ScrollView>
