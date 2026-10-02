@@ -15,7 +15,7 @@ class WhatsAppResponderService : NotificationListenerService() {
         private val lastProcessedMessages = HashMap<String, Long>()
 
         /**
-         * Nuevo Algoritmo Fuzzy Match:
+         * Algoritmo Fuzzy Match:
          * Calcula el porcentaje de similitud real permitiendo variaciones de 1 o 2 letras,
          * errores tipográficos y diferencia de orden de palabras.
          */
@@ -40,8 +40,7 @@ class WhatsAppResponderService : NotificationListenerService() {
 
             // Si la diferencia es solo de 1 o 2 letras (ej. quitar/cambiar una letra)
             if (dist <= 2) {
-                val boostedScore = maxOf(directScore, 80)
-                return boostedScore
+                return maxOf(directScore, 80)
             }
 
             // 3. Comparación parcial por subsecuencia / palabras clave
@@ -84,7 +83,7 @@ class WhatsAppResponderService : NotificationListenerService() {
             for (i in 0..s1.length) dp[i][0] = i
             for (j in 0..s2.length) dp[j][0] = j
 
-            for (i 1..s1.length) {
+            for (i in 1..s1.length) {
                 for (j in 1..s2.length) {
                     val cost = if (s1[i - 1] == s2[j - 1]) 0 else 1
                     dp[i][j] = minOf(
@@ -158,7 +157,7 @@ class WhatsAppResponderService : NotificationListenerService() {
             return
         }
 
-        // Evaluación de similitud con el nuevo motor
+        // Evaluación de similitud con el motor corregido
         if (triggerMessage.isNotEmpty()) {
             val score = calculateMatchPercentage(text, triggerMessage)
             if (score < requiredPercent) {
