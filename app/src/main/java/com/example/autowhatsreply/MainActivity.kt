@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
+import android.widget.Switch
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 
@@ -16,16 +17,19 @@ class MainActivity : AppCompatActivity() {
 
         val prefs = getSharedPreferences("AutoReplyPrefs", Context.MODE_PRIVATE)
 
+        val switchAutoReply = findViewById<Switch>(R.id.switchAutoReply)
         val etTrigger = findViewById<EditText>(R.id.etTrigger)
         val etReply = findViewById<EditText>(R.id.etReply)
         val btnSave = findViewById<Button>(R.id.btnSave)
         val btnPermission = findViewById<Button>(R.id.btnPermission)
 
-        // Cargar valores guardados previamente
+        // Cargar estado e información guardada
+        switchAutoReply.isChecked = prefs.getBoolean("is_enabled", true)
         etTrigger.setText(prefs.getString("trigger_message", ""))
-        etReply.setText(prefs.getString("reply_message", "Hola, estoy ocupado ahora mismo."))
+        etReply.setText(prefs.getString("reply_message", "Hola, bienvenido al evento."))
 
         btnSave.setOnClickListener {
+            val isEnabled = switchAutoReply.isChecked
             val trigger = etTrigger.text.toString().trim()
             val reply = etReply.text.toString().trim()
 
@@ -35,11 +39,13 @@ class MainActivity : AppCompatActivity() {
             }
 
             prefs.edit()
+                .putBoolean("is_enabled", isEnabled)
                 .putString("trigger_message", trigger)
                 .putString("reply_message", reply)
                 .apply()
 
-            Toast.makeText(this, "Configuración guardada correctamente", Toast.LENGTH_SHORT).show()
+            val stateText = if (isEnabled) "ACTIVADA" else "DESACTIVADA"
+            Toast.makeText(this, "Guardado: Auto-respuesta $stateText", Toast.LENGTH_SHORT).show()
         }
 
         btnPermission.setOnClickListener {

@@ -11,19 +11,29 @@
         android:text="Configurar Auto-Respuesta"
         android:textSize="20sp"
         android:textStyle="bold"
+        android:layout_marginBottom="15dp" />
+
+    <!-- Interruptor para activar/desactivar -->
+    <Switch
+        android:id="@+id/switchAutoReply"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Activar Respuesta Automática"
+        android:textSize="16sp"
+        android:textStyle="bold"
         android:layout_marginBottom="20dp" />
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Responder solo cuando el mensaje recibido contenga: (Déjalo vacío para responder a todo)"
+        android:text="Frase o palabras clave (coincidencia flexible):"
         android:textSize="12sp" />
 
     <EditText
         android:id="@+id/etTrigger"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Ej: precio, horario, info..."
+        android:hint="Ej: hola estoy en el evento"
         android:layout_marginBottom="15dp" />
 
     <TextView
@@ -36,7 +46,7 @@
         android:id="@+id/etReply"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Escribe aquí tu respuesta personalizada..."
+        android:hint="Escribe aquí tu respuesta..."
         android:layout_marginBottom="20dp" />
 
     <Button
