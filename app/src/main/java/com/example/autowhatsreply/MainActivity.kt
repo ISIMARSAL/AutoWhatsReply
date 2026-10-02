@@ -40,7 +40,6 @@ class MainActivity : AppCompatActivity() {
         val btnTestMatch = findViewById<Button>(R.id.btnTestMatch)
         val btnPermission = findViewById<Button>(R.id.btnPermission)
 
-        // Cargar datos
         val isEnabled = prefs.getBoolean("is_enabled", false)
         switchAutoReply.isChecked = isEnabled
         updateStatusAndNotification(isEnabled, tvStatus)
@@ -50,14 +49,13 @@ class MainActivity : AppCompatActivity() {
 
         val currentSimilarity = prefs.getInt("similarity_percent", 70)
         sbSimilarity.progress = currentSimilarity
-        tvSimilarityLabel.text = "Porcentaje de similitud: $currentSimilarity%"
+        tvSimilarityLabel.text = "Similitud requerida: $currentSimilarity%"
 
         switchIgnoreGroups.isChecked = prefs.getBoolean("ignore_groups", true)
         switchSchedule.isChecked = prefs.getBoolean("schedule_enabled", false)
         etStartHour.setText(prefs.getString("start_hour", ""))
         etEndHour.setText(prefs.getString("end_hour", ""))
 
-        // Interruptor ON/OFF instantáneo y actualización de notificación fijos
         switchAutoReply.setOnCheckedChangeListener { _, isChecked ->
             prefs.edit().putBoolean("is_enabled", isChecked).apply()
             updateStatusAndNotification(isChecked, tvStatus)
@@ -65,7 +63,7 @@ class MainActivity : AppCompatActivity() {
 
         sbSimilarity.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                tvSimilarityLabel.text = "Porcentaje de similitud: $progress%"
+                tvSimilarityLabel.text = "Similitud requerida: $progress%"
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
@@ -88,7 +86,7 @@ class MainActivity : AppCompatActivity() {
                 .putString("end_hour", etEndHour.text.toString().trim())
                 .apply()
 
-            Toast.makeText(this, "Ajustes guardados con éxito", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Configuración guardada correctamente", Toast.LENGTH_SHORT).show()
         }
 
         btnTestMatch.setOnClickListener {
@@ -96,29 +94,28 @@ class MainActivity : AppCompatActivity() {
             val requiredPercent = sbSimilarity.progress
 
             if (trigger.isEmpty()) {
-                Toast.makeText(this, "Escribe primero un mensaje disparador", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Escribe primero un mensaje en la casilla disparadora", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
             val input = EditText(this)
-            input.hint = "Ej: hola! estoy en el evnto"
+            input.hint = "Escribe una frase de prueba"
 
             AlertDialog.Builder(this)
-                .setTitle("Probar Algoritmo de Similitud")
-                .setMessage("Frase esperada: '$trigger' ($requiredPercent%)\n\nIngresa la frase a probar:")
+                .setTitle("Probador de Similitud")
+                .setMessage("Frase configurada: '$trigger'\nExigencia: $requiredPercent%\n\nIntroduce el mensaje a evaluar:")
                 .setView(input)
-                .setPositiveButton("Probar") { _, _ ->
+                .setPositiveButton("Evaluar") { _, _ ->
                     val testText = input.text.toString()
-                    val isMatch = WhatsAppResponderService.evaluateSimilarity(testText, trigger, requiredPercent)
-                    val resultMessage = if (isMatch) {
-                        "¡ÉXITO! La frase '$testText' SÍ activa la respuesta automática."
-                    } else {
-                        "RECHAZADO: La frase '$testText' NO supera el $requiredPercent% de similitud."
-                    }
+                    val score = WhatsAppResponderService.calculateMatchPercentage(testText, trigger)
+                    val isMatch = score >= requiredPercent
+                    val resultMessage = "Puntuación obtenida: $score%\nRequerido: $requiredPercent%\n\nResultado: " +
+                            if (isMatch) "¡SÍ SE ACTIVA!" else "NO ALCANZA EL MÍNIMO"
+
                     AlertDialog.Builder(this)
-                        .setTitle("Resultado")
+                        .setTitle("Resultado de Similitud")
                         .setMessage(resultMessage)
-                        .setPositiveButton("Entendido", null)
+                        .setPositiveButton("Aceptar", null)
                         .show()
                 }
                 .setNegativeButton("Cancelar", null)
@@ -137,19 +134,19 @@ class MainActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,
-                "Estado del servicio AutoWhatsReply",
+                "Estado de AutoWhatsReply",
                 NotificationManager.IMPORTANCE_LOW
             )
             notificationManager.createNotificationChannel(channel)
         }
 
         if (isEnabled) {
-            tv.text = "Estado: ACTIVADO (Escuchando WhatsApp)"
+            tv.text = "Estado: ACTIVADO (Escuchando mensajes)"
             tv.setTextColor(0xFF10B981.toInt())
 
             val notification = NotificationCompat.Builder(this, channelId)
                 .setContentTitle("AutoWhatsReply Activo")
-                .setContentText("El servicio de respuesta automática está funcionando.")
+                .setContentText("Escuchando notificaciones en segundo plano")
                 .setSmallIcon(android.R.drawable.ic_dialog_info)
                 .setOngoing(true)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
@@ -158,7 +155,7 @@ class MainActivity : AppCompatActivity() {
             notificationManager.notify(1001, notification)
         } else {
             tv.text = "Estado: DESACTIVADO"
-            tv.setTextColor(0xFF6B7280.toInt())
+            tv.setTextColor(0xFF64748B.toInt())
             notificationManager.cancel(1001)
         }
     }

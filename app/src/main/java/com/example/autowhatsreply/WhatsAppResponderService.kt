@@ -12,52 +12,48 @@ import java.util.Calendar
 class WhatsAppResponderService : NotificationListenerService() {
 
     companion object {
+        // Guardar timestamp del último mensaje respondido para evitar responder 2 veces a la misma notificación
+        private val lastProcessedMessages = HashMap<String, Long>()
+
         /**
-         * Algoritmo de similitud inteligente con soporte para faltas de 1 letra y % progresivo.
+         * Retorna el porcentaje exacto (0 - 100) de similitud entre dos textos.
          */
-        fun evaluateSimilarity(incoming: String, target: String, requiredPercent: Int): Boolean {
-            val cleanIn = cleanString(incoming)
-            val cleanTar = cleanString(target)
+        fun calculateMatchPercentage(incoming: String, target: String): Int {
+            val s1 = cleanString(incoming)
+            val s2 = cleanString(target)
 
-            if (cleanIn.isEmpty() || cleanTar.isEmpty()) return false
+            if (s1.isEmpty() || s2.isEmpty()) return 0
+            if (s1 == s2) return 100
 
-            // 1. Coincidencia exacta
-            if (cleanIn == cleanTar) return true
+            // 1. Similitud global por Levenshtein
+            val maxLen = maxOf(s1.length, s2.length)
+            val distance = levenshteinDistance(s1, s2)
+            val levScore = ((maxLen - distance).toDouble() / maxLen.toDouble()) * 100.0
 
-            // 2. Distancia de Levenshtein pura
-            val maxLen = maxOf(cleanIn.length, cleanTar.length)
-            val distance = levenshteinDistance(cleanIn, cleanTar)
-            val distanceScore = ((maxLen - distance).toDouble() / maxLen.toDouble()) * 100.0
-
-            // Si la diferencia es solo de 1 o 2 caracteres en frases medianas/largas, aceptarlo directamente
-            if (distance <= 2 && cleanTar.length >= 8 && requiredPercent <= 85) {
-                return true
-            }
-
-            if (distanceScore >= requiredPercent) {
-                return true
-            }
-
-            // 3. Análisis por palabras clave
-            val targetWords = cleanTar.split(" ").filter { it.isNotEmpty() }
-            val incomingWords = cleanIn.split(" ").filter { it.isNotEmpty() }
-
-            if (targetWords.isEmpty()) return false
+            // 2. Coincidencia por palabras clave
+            val words1 = s1.split(" ").filter { it.isNotEmpty() }
+            val words2 = s2.split(" ").filter { it.isNotEmpty() }
 
             var matchedWords = 0
-            for (tWord in targetWords) {
-                for (iWord in incomingWords) {
-                    val wordDist = levenshteinDistance(tWord, iWord)
-                    // Si la palabra varía solo por 1 letra
-                    if (wordDist <= 1 && tWord.length > 2) {
-                        matchedWords++
-                        break
+            for (w2 in words2) {
+                if (words1.contains(w2)) {
+                    matchedWords++
+                } else {
+                    // Tolerancia de 1 letra en palabras de más de 3 letras
+                    for (w1 in words1) {
+                        if (w2.length > 3 && levenshteinDistance(w1, w2) <= 1) {
+                            matchedWords++
+                            break
+                        }
                     }
                 }
             }
 
-            val wordScore = (matchedWords.toDouble() / targetWords.size.toDouble()) * 100.0
-            return wordScore >= requiredPercent
+            val wordScore = (matchedWords.toDouble() / words2.size.toDouble()) * 100.0
+
+            // Promedio ponderado entre distancia global y palabras
+            val finalScore = (levScore * 0.5) + (wordScore * 0.5)
+            return finalScore.toInt().coerceIn(0, 100)
         }
 
         private fun cleanString(str: String): String {
@@ -87,78 +83,77 @@ class WhatsAppResponderService : NotificationListenerService() {
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
-        processAllNotifications()
-    }
+        sbn ?: return
+        val packageName = sbn.packageName
 
-    /**
-     * Recorre TODAS las notificaciones activas para asegurarse de procesar
-     * múltiples mensajes pendientes y no dejar ninguno sin revisar.
-     */
-    private fun processAllNotifications() {
+        if (packageName != "com.whatsapp" && packageName != "com.whatsapp.w4b") {
+            return
+        }
+
         val prefs = getSharedPreferences("AutoReplyPrefs", Context.MODE_PRIVATE)
 
         if (!prefs.getBoolean("is_enabled", false)) return
 
-        val activeNotifications = try {
-            activeNotifications
-        } catch (e: Exception) {
-            null
-        } ?: return
+        val notification = sbn.notification ?: return
+        val extras = notification.extras ?: return
 
-        for (sbn in activeNotifications) {
-            val packageName = sbn.packageName
-            if (packageName != "com.whatsapp" && packageName != "com.whatsapp.w4b") {
-                continue
+        val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()?.trim() ?: ""
+        val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()?.trim() ?: return
+
+        // 1. Evitar procesamiento doble del mismo mensaje (Cooldown de 10 segundos por remitente y texto)
+        val messageKey = "$title:$text"
+        val currentTime = System.currentTimeMillis()
+        val lastTime = lastProcessedMessages[messageKey] ?: 0L
+
+        if (currentTime - lastTime < 10000) {
+            return // Ignorar duplicado
+        }
+
+        // 2. Filtro de chats grupales
+        if (prefs.getBoolean("ignore_groups", true)) {
+            if (title.contains(":") || title.contains("@g.us")) {
+                return
             }
+        }
 
-            val notification = sbn.notification ?: continue
-            val extras = notification.extras ?: continue
-
-            val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()?.trim() ?: ""
-            val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()?.trim() ?: continue
-
-            // Ignorar grupos si está activado
-            if (prefs.getBoolean("ignore_groups", true)) {
-                if (title.contains(":") || title.contains("@g.us")) {
-                    continue
+        // 3. Filtro de horario
+        if (prefs.getBoolean("schedule_enabled", false)) {
+            val start = prefs.getString("start_hour", "")?.toIntOrNull()
+            val end = prefs.getString("end_hour", "")?.toIntOrNull()
+            if (start != null && end != null) {
+                val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+                if (!isHourInInterval(currentHour, start, end)) {
+                    return
                 }
             }
+        }
 
-            // Horario
-            if (prefs.getBoolean("schedule_enabled", false)) {
-                val start = prefs.getString("start_hour", "")?.toIntOrNull()
-                val end = prefs.getString("end_hour", "")?.toIntOrNull()
-                if (start != null && end != null) {
-                    val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-                    if (!isHourInInterval(currentHour, start, end)) {
-                        continue
-                    }
-                }
+        val replyMessage = prefs.getString("reply_message", "")?.trim() ?: return
+        val triggerMessage = prefs.getString("trigger_message", "")?.trim() ?: ""
+        val requiredPercent = prefs.getInt("similarity_percent", 70)
+
+        if (replyMessage.isEmpty()) return
+
+        // Evitar bucles
+        if (text.equals(replyMessage, ignoreCase = true) || text.contains(replyMessage, ignoreCase = true)) {
+            return
+        }
+
+        if (text.contains("WhatsApp") || text.contains("mensajes nuevos") || text.contains("Respondiendo")) {
+            return
+        }
+
+        // 4. Comparación de similitud
+        if (triggerMessage.isNotEmpty()) {
+            val score = calculateMatchPercentage(text, triggerMessage)
+            if (score < requiredPercent) {
+                return
             }
+        }
 
-            val replyMessage = prefs.getString("reply_message", "")?.trim() ?: continue
-            val triggerMessage = prefs.getString("trigger_message", "")?.trim() ?: ""
-            val similarityPercent = prefs.getInt("similarity_percent", 70)
-
-            if (replyMessage.isEmpty()) continue
-
-            // Evitar auto-responder a nuestros propios mensajes o resúmenes
-            if (text.equals(replyMessage, ignoreCase = true) || text.contains(replyMessage, ignoreCase = true)) {
-                continue
-            }
-
-            if (text.contains("WhatsApp") || text.contains("mensajes nuevos") || text.contains("Respondiendo")) {
-                continue
-            }
-
-            // Comprobación de similitud
-            if (triggerMessage.isNotEmpty()) {
-                if (!evaluateSimilarity(text, triggerMessage, similarityPercent)) {
-                    continue
-                }
-            }
-
-            extractAndSendReply(notification, replyMessage)
+        // Enviar respuesta y guardar en caché
+        if (extractAndSendReply(notification, replyMessage)) {
+            lastProcessedMessages[messageKey] = currentTime
         }
     }
 
