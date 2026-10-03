@@ -12,11 +12,6 @@ class WhatsAppResponderService : NotificationListenerService() {
 
     companion object {
 
-        /**
-         * Algoritmo Fuzzy Match:
-         * Calcula el porcentaje de similitud permitiendo variaciones de letras,
-         * errores tipográficos y diferencia de orden.
-         */
         fun calculateMatchPercentage(incoming: String, target: String): Int {
             val cleanIn = cleanString(incoming)
             val cleanTar = cleanString(target)
@@ -94,7 +89,6 @@ class WhatsAppResponderService : NotificationListenerService() {
         sbn ?: return
         val packageName = sbn.packageName
 
-        // Filtrar solo notificaciones provenientes de WhatsApp o WhatsApp Business
         if (packageName != "com.whatsapp" && packageName != "com.whatsapp.w4b") {
             return
         }
@@ -106,9 +100,8 @@ class WhatsAppResponderService : NotificationListenerService() {
         val extras = notification.extras ?: return
 
         val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()?.trim() ?: ""
-        val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()?.trim() ?: ""
 
-        // Filtro opcional de grupos
+        // Filtro de grupos
         if (prefs.getBoolean("ignore_groups", true)) {
             if (title.contains(":") || title.contains("@g.us")) {
                 return
@@ -121,26 +114,60 @@ class WhatsAppResponderService : NotificationListenerService() {
 
         if (replyMessage.isEmpty()) return
 
-        // Descartar mensajes genéricos del sistema de WhatsApp
-        if (text.contains("mensajes nuevos") || text.contains("Respondiendo a") || text.isEmpty()) {
+        // Extraer el último mensaje real recibido ignorando historiales/respuestas previas
+        val incomingMessage = extractLatestIncomingText(extras) ?: return
+
+        // Ignorar si el texto extraído es la respuesta automática propia
+        if (incomingMessage.equals(replyMessage, ignoreCase = true)) {
             return
         }
 
-        // Evitar bucles infinitos respondiéndose a uno mismo
-        if (text.equals(replyMessage, ignoreCase = true) || text.contains(replyMessage, ignoreCase = true)) {
-            return
-        }
-
-        // Evaluar similitud con el mensaje disparador
+        // Evaluar similitud con la regla configurada
         if (triggerMessage.isNotEmpty()) {
-            val score = calculateMatchPercentage(text, triggerMessage)
+            val score = calculateMatchPercentage(incomingMessage, triggerMessage)
             if (score < requiredPercent) {
                 return
             }
         }
 
-        // Enviar respuesta a TODAS las notificaciones válidas de forma inmediata
+        // Responder
         extractAndSendReply(notification, replyMessage)
+    }
+
+    private fun extractLatestIncomingText(extras: Bundle): String? {
+        // 1. Extraer desde el historial de MessagingStyle (mensajes acumulados)
+        val messages = extras.getParcelableArray(Notification.EXTRA_MESSAGES)
+        if (messages != null && messages.isNotEmpty()) {
+            val lastMessageBundle = messages.last() as? Bundle
+            if (lastMessageBundle != null) {
+                val text = lastMessageBundle.getCharSequence("text")?.toString()?.trim()
+                if (!text.isNullOrEmpty()) {
+                    return text
+                }
+            }
+        }
+
+        // 2. Extraer desde líneas de notificaciones agrupadas (EXTRA_TEXT_LINES)
+        val textLines = extras.getCharSequenceArray(Notification.EXTRA_TEXT_LINES)
+        if (textLines != null && textLines.isNotEmpty()) {
+            val lastLine = textLines.last()?.toString()?.trim()
+            if (!lastLine.isNullOrEmpty()) {
+                // Si la línea tiene formato "Remitente: Mensaje", nos quedamos con el mensaje
+                return if (lastLine.contains(": ")) {
+                    lastLine.substringAfter(": ").trim()
+                } else {
+                    lastLine
+                }
+            }
+        }
+
+        // 3. Fallback al texto plano estándar
+        val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()?.trim()
+        if (!text.isNullOrEmpty() && !text.contains("mensajes nuevos") && !text.contains("Respondiendo a")) {
+            return text
+        }
+
+        return null
     }
 
     private fun extractAndSendReply(notification: Notification, replyMessage: String): Boolean {
