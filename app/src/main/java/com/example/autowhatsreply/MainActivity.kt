@@ -38,16 +38,19 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnBatteryOptimization.setOnClickListener {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                val intent = Intent()
-                val packageName = packageName
-                val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
-                if (!pm.isIgnoringBatteryOptimizations(packageName)) {
-                    intent.action = Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
-                    intent.data = Uri.parse("package:$packageName")
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
                     startActivity(intent)
                 } else {
-                    Toast.makeText(this, "Las restricciones de batería ya están desactivadas", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Tu versión de Android no requiere esta configuración", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                try {
+                    val fallbackIntent = Intent(Settings.ACTION_SETTINGS)
+                    startActivity(fallbackIntent)
+                } catch (ex: Exception) {
+                    Toast.makeText(this, "Abre Ajustes > Batería en tu teléfono", Toast.LENGTH_LONG).show()
                 }
             }
         }

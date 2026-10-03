@@ -104,12 +104,12 @@ class WhatsAppResponderService : NotificationListenerService() {
         val extras = notification.extras ?: return
 
         executor.execute {
-            processNotification(sbn.key, notification, extras, prefs)
+            processNotification(sbn, notification, extras, prefs)
         }
     }
 
     private fun processNotification(
-        sbnKey: String,
+        sbn: StatusBarNotification,
         notification: Notification,
         extras: Bundle,
         prefs: android.content.SharedPreferences
@@ -130,7 +130,7 @@ class WhatsAppResponderService : NotificationListenerService() {
 
         val incomingMessage = extractIncomingMessageFromUser(extras, replyMessage) ?: return
 
-        val uniqueKey = "$sbnKey|$incomingMessage|${incomingMessage.hashCode()}"
+        val uniqueKey = "${sbn.key}|$incomingMessage|${incomingMessage.hashCode()}"
 
         if (triggerMessage.isNotEmpty()) {
             val score = calculateMatchPercentage(incomingMessage, triggerMessage)
@@ -145,6 +145,15 @@ class WhatsAppResponderService : NotificationListenerService() {
 
         if (extractAndSendReply(notification, replyMessage)) {
             processedMessageKeys.add(uniqueKey)
+            
+            // BORRAR / CANCELAR NOTIFICACIÓN INMEDIATAMENTE
+            // Esto evita que se acumulen y fuerza a Android/WhatsApp a generar notificaciones limpias
+            try {
+                cancelNotification(sbn.key)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+
             if (processedMessageKeys.size > 100) {
                 processedMessageKeys.clear()
             }
