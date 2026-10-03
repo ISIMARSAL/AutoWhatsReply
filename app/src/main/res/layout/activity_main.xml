@@ -85,32 +85,13 @@
             android:lines="3"
             android:layout_marginBottom="16dp"/>
 
-        <!-- Botones de permisos/configuración en la parte inferior -->
-        <LinearLayout
+        <!-- Un solo botón para el Permiso de Notificaciones -->
+        <Button
+            android:id="@+id/btnNotificationPermission"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:weightSum="2"
-            android:layout_marginBottom="12dp">
-
-            <Button
-                android:id="@+id/btnNotificationPermission"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginEnd="4dp"
-                android:text="Permiso Notif."
-                android:textSize="12sp"/>
-
-            <Button
-                android:id="@+id/btnBatteryOptimization"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="4dp"
-                android:text="Optimización Batería"
-                android:textSize="12sp"/>
-        </LinearLayout>
+            android:text="Acceso a Notificaciones"
+            android:layout_marginBottom="12dp"/>
 
         <Button
             android:id="@+id/btnSave"

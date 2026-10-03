@@ -2,10 +2,7 @@ package com.example.autowhatsreply
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
-import android.os.Build
 import android.os.Bundle
-import android.os.PowerManager
 import android.provider.Settings
 import android.widget.Button
 import android.widget.EditText
@@ -24,7 +21,6 @@ class MainActivity : AppCompatActivity() {
         val prefs = getSharedPreferences("AutoReplyPrefs", Context.MODE_PRIVATE)
 
         val btnNotificationPermission = findViewById<Button>(R.id.btnNotificationPermission)
-        val btnBatteryOptimization = findViewById<Button>(R.id.btnBatteryOptimization)
         val switchEnable = findViewById<Switch>(R.id.switchEnable)
         val switchIgnoreGroups = findViewById<Switch>(R.id.switchIgnoreGroups)
         val etTriggerMessage = findViewById<EditText>(R.id.etTriggerMessage)
@@ -35,24 +31,6 @@ class MainActivity : AppCompatActivity() {
 
         btnNotificationPermission.setOnClickListener {
             startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
-        }
-
-        btnBatteryOptimization.setOnClickListener {
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
-                    startActivity(intent)
-                } else {
-                    Toast.makeText(this, "Tu versión de Android no requiere esta configuración", Toast.LENGTH_SHORT).show()
-                }
-            } catch (e: Exception) {
-                try {
-                    val fallbackIntent = Intent(Settings.ACTION_SETTINGS)
-                    startActivity(fallbackIntent)
-                } catch (ex: Exception) {
-                    Toast.makeText(this, "Abre Ajustes > Batería en tu teléfono", Toast.LENGTH_LONG).show()
-                }
-            }
         }
 
         switchEnable.isChecked = prefs.getBoolean("is_enabled", false)
