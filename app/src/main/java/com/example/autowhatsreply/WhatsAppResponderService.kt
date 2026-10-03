@@ -11,7 +11,8 @@ import android.service.notification.StatusBarNotification
 class WhatsAppResponderService : NotificationListenerService() {
 
     companion object {
-        private val lastProcessedMessages = HashMap<String, Long>()
+        // Almacena el timestamp de la última respuesta enviada A CADA REMITENTE por separado
+        private val lastReplyTimePerSender = HashMap<String, Long>()
 
         fun calculateMatchPercentage(incoming: String, target: String): Int {
             val cleanIn = cleanString(incoming)
@@ -103,17 +104,18 @@ class WhatsAppResponderService : NotificationListenerService() {
         val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()?.trim() ?: ""
         val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()?.trim() ?: return
 
-        // Filtro de tiempo de espera dinámico
-        val cooldownSeconds = prefs.getInt("cooldown_seconds", 10)
-        val messageKey = "$title:$text"
-        val currentTime = System.currentTimeMillis()
-        val lastTime = lastProcessedMessages[messageKey] ?: 0L
+        if (title.isEmpty()) return
 
-        if (currentTime - lastTime < (cooldownSeconds * 1000L)) {
+        // 1. Cooldown individual POR REMITENTE (no afecta a otros teléfonos)
+        val cooldownSeconds = prefs.getInt("cooldown_seconds", 10)
+        val currentTime = System.currentTimeMillis()
+        val lastReplyTime = lastReplyTimePerSender[title] ?: 0L
+
+        if (currentTime - lastReplyTime < (cooldownSeconds * 1000L)) {
             return
         }
 
-        // Filtro de grupos
+        // 2. Filtro de chats grupales
         if (prefs.getBoolean("ignore_groups", true)) {
             if (title.contains(":") || title.contains("@g.us")) {
                 return
@@ -126,6 +128,7 @@ class WhatsAppResponderService : NotificationListenerService() {
 
         if (replyMessage.isEmpty()) return
 
+        // Evitar bucles (revisar si el mensaje entrante es la misma respuesta enviada)
         if (text.equals(replyMessage, ignoreCase = true) || text.contains(replyMessage, ignoreCase = true)) {
             return
         }
@@ -134,6 +137,7 @@ class WhatsAppResponderService : NotificationListenerService() {
             return
         }
 
+        // 3. Verificación de coincidencia
         if (triggerMessage.isNotEmpty()) {
             val score = calculateMatchPercentage(text, triggerMessage)
             if (score < requiredPercent) {
@@ -141,8 +145,9 @@ class WhatsAppResponderService : NotificationListenerService() {
             }
         }
 
+        // Enviar respuesta e independizar el cooldown para este remitente específico
         if (extractAndSendReply(notification, replyMessage)) {
-            lastProcessedMessages[messageKey] = currentTime
+            lastReplyTimePerSender[title] = currentTime
         }
     }
 
