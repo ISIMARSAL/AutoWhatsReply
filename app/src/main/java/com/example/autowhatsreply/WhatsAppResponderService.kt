@@ -14,7 +14,6 @@ class WhatsAppResponderService : NotificationListenerService() {
 
     companion object {
         private val executor = Executors.newSingleThreadExecutor()
-        // Registro de notificaciones procesadas para no duplicar la respuesta al mismo mensaje exacto
         private val processedMessageKeys = ConcurrentHashMap.newKeySet<String>()
 
         fun calculateMatchPercentage(incoming: String, target: String): Int {
@@ -76,7 +75,7 @@ class WhatsAppResponderService : NotificationListenerService() {
             for (i in 0..s1.length) dp[i][0] = i
             for (j in 0..s2.length) dp[j][0] = j
 
-            for (i in 1..s1.length) {
+            for (i 1..s1.length) {
                 for (j in 1..s2.length) {
                     val cost = if (s1[i - 1] == s2[j - 1]) 0 else 1
                     dp[i][j] = minOf(
@@ -105,7 +104,7 @@ class WhatsAppResponderService : NotificationListenerService() {
         val extras = notification.extras ?: return
 
         executor.execute {
-            processNotification(sbn.key, notification, extras, sbn.postTime, prefs)
+            processNotification(sbn.key, notification, extras, prefs)
         }
     }
 
@@ -113,12 +112,10 @@ class WhatsAppResponderService : NotificationListenerService() {
         sbnKey: String,
         notification: Notification,
         extras: Bundle,
-        postTime: Long,
         prefs: android.content.SharedPreferences
     ) {
         val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()?.trim() ?: ""
 
-        // Filtro de grupos
         if (prefs.getBoolean("ignore_groups", true)) {
             if (title.contains(":") || title.contains("@g.us")) {
                 return
@@ -131,13 +128,10 @@ class WhatsAppResponderService : NotificationListenerService() {
 
         if (replyMessage.isEmpty()) return
 
-        // Extraer el mensaje entrante filtrando mensajes propios de la respuesta
         val incomingMessage = extractIncomingMessageFromUser(extras, replyMessage) ?: return
 
-        // Clave única basada en la clave de la notificación de Android + texto entrante + timestamp actual de procesamiento
-        val uniqueKey = "$sbnKey|$incomingMessage\vert{}${incomingMessage.hashCode()}"
-        
-        // Evaluar si coincide con el disparador por porcentaje
+        val uniqueKey = "$sbnKey|$incomingMessage|${incomingMessage.hashCode()}"
+
         if (triggerMessage.isNotEmpty()) {
             val score = calculateMatchPercentage(incomingMessage, triggerMessage)
             if (score < requiredPercent) {
@@ -145,12 +139,10 @@ class WhatsAppResponderService : NotificationListenerService() {
             }
         }
 
-        // Si es el mismo evento exacto procesado en el mismo instante, evitar duplicado rápido
         if (processedMessageKeys.contains(uniqueKey)) {
             return
         }
 
-        // Enviar respuesta
         if (extractAndSendReply(notification, replyMessage)) {
             processedMessageKeys.add(uniqueKey)
             if (processedMessageKeys.size > 100) {
@@ -160,19 +152,16 @@ class WhatsAppResponderService : NotificationListenerService() {
     }
 
     private fun extractIncomingMessageFromUser(extras: Bundle, replyMessage: String): String? {
-        // 1. Revisar los objetos de mensaje en `EXTRA_MESSAGES`
         val messages = extras.getParcelableArray(Notification.EXTRA_MESSAGES)
         if (messages != null && messages.isNotEmpty()) {
             for (i in messages.indices.reversed()) {
                 val b = messages[i] as? Bundle ?: continue
                 val text = b.getCharSequence("text")?.toString()?.trim() ?: continue
 
-                // Si el texto coincide con nuestra propia respuesta automática, ignorar este mensaje
                 if (text.equals(replyMessage, ignoreCase = true) || text.contains(replyMessage, ignoreCase = true)) {
                     continue
                 }
 
-                // Verificar si tiene información del emisor (no enviado por 'Yo' / 'You')
                 val sender = b.getCharSequence("sender")?.toString()?.trim()
                 if (sender != null && (sender.equals("Yo", ignoreCase = true) || sender.equals("You", ignoreCase = true))) {
                     continue
@@ -184,7 +173,6 @@ class WhatsAppResponderService : NotificationListenerService() {
             }
         }
 
-        // 2. Revisar `EXTRA_TEXT_LINES` (notificaciones agrupadas)
         val textLines = extras.getCharSequenceArray(Notification.EXTRA_TEXT_LINES)
         if (textLines != null && textLines.isNotEmpty()) {
             for (i in textLines.indices.reversed()) {
@@ -201,12 +189,11 @@ class WhatsAppResponderService : NotificationListenerService() {
             }
         }
 
-        // 3. Revisar `EXTRA_TEXT` básico
         val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()?.trim()
         if (!text.isNullOrEmpty()) {
-            if (!text.equals(replyMessage, ignoreCase = true) && 
-                !text.contains(replyMessage, ignoreCase = true) && 
-                !text.contains("mensajes nuevos") && 
+            if (!text.equals(replyMessage, ignoreCase = true) &&
+                !text.contains(replyMessage, ignoreCase = true) &&
+                !text.contains("mensajes nuevos") &&
                 !text.contains("Respondiendo a")) {
                 return text
             }
