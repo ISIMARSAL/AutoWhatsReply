@@ -75,7 +75,7 @@ class WhatsAppResponderService : NotificationListenerService() {
             for (i in 0..s1.length) dp[i][0] = i
             for (j in 0..s2.length) dp[j][0] = j
 
-            for (i 1..s1.length) {
+            for (i in 1..s1.length) {
                 for (j in 1..s2.length) {
                     val cost = if (s1[i - 1] == s2[j - 1]) 0 else 1
                     dp[i][j] = minOf(
