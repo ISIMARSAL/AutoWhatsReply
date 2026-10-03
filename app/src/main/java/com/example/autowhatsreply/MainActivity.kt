@@ -31,12 +31,10 @@ class MainActivity : AppCompatActivity() {
         val sbSimilarity = findViewById<SeekBar>(R.id.sbSimilarity)
 
         val switchIgnoreGroups = findViewById<Switch>(R.id.switchIgnoreGroups)
-        val etCooldown = findViewById<EditText>(R.id.etCooldown)
 
         val btnSave = findViewById<Button>(R.id.btnSave)
         val btnPermission = findViewById<Button>(R.id.btnPermission)
 
-        // Cargar ajustes guardados
         val isEnabled = prefs.getBoolean("is_enabled", false)
         switchAutoReply.isChecked = isEnabled
         updateStatusAndNotification(isEnabled, tvStatus)
@@ -49,7 +47,6 @@ class MainActivity : AppCompatActivity() {
         tvSimilarityLabel.text = "Sensibilidad de similitud: $currentSimilarity%"
 
         switchIgnoreGroups.isChecked = prefs.getBoolean("ignore_groups", true)
-        etCooldown.setText(prefs.getInt("cooldown_seconds", 10).toString())
 
         switchAutoReply.setOnCheckedChangeListener { _, isChecked ->
             prefs.edit().putBoolean("is_enabled", isChecked).apply()
@@ -71,14 +68,11 @@ class MainActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            val cooldownSecs = etCooldown.text.toString().toIntOrNull() ?: 10
-
             prefs.edit()
                 .putString("trigger_message", etTrigger.text.toString().trim())
                 .putString("reply_message", reply)
                 .putInt("similarity_percent", sbSimilarity.progress)
                 .putBoolean("ignore_groups", switchIgnoreGroups.isChecked)
-                .putInt("cooldown_seconds", cooldownSecs)
                 .apply()
 
             Toast.makeText(this, "Configuración guardada para Eventos Salinas", Toast.LENGTH_SHORT).show()

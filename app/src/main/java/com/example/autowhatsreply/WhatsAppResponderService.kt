@@ -11,9 +11,12 @@ import android.service.notification.StatusBarNotification
 class WhatsAppResponderService : NotificationListenerService() {
 
     companion object {
-        // Almacena el timestamp de la última respuesta enviada A CADA REMITENTE por separado
-        private val lastReplyTimePerSender = HashMap<String, Long>()
 
+        /**
+         * Algoritmo Fuzzy Match:
+         * Calcula el porcentaje de similitud permitiendo variaciones de letras,
+         * errores tipográficos y diferencia de orden.
+         */
         fun calculateMatchPercentage(incoming: String, target: String): Int {
             val cleanIn = cleanString(incoming)
             val cleanTar = cleanString(target)
@@ -91,6 +94,7 @@ class WhatsAppResponderService : NotificationListenerService() {
         sbn ?: return
         val packageName = sbn.packageName
 
+        // Filtrar solo notificaciones provenientes de WhatsApp o WhatsApp Business
         if (packageName != "com.whatsapp" && packageName != "com.whatsapp.w4b") {
             return
         }
@@ -102,20 +106,9 @@ class WhatsAppResponderService : NotificationListenerService() {
         val extras = notification.extras ?: return
 
         val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()?.trim() ?: ""
-        val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()?.trim() ?: return
+        val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()?.trim() ?: ""
 
-        if (title.isEmpty()) return
-
-        // 1. Cooldown individual POR REMITENTE (no afecta a otros teléfonos)
-        val cooldownSeconds = prefs.getInt("cooldown_seconds", 10)
-        val currentTime = System.currentTimeMillis()
-        val lastReplyTime = lastReplyTimePerSender[title] ?: 0L
-
-        if (currentTime - lastReplyTime < (cooldownSeconds * 1000L)) {
-            return
-        }
-
-        // 2. Filtro de chats grupales
+        // Filtro opcional de grupos
         if (prefs.getBoolean("ignore_groups", true)) {
             if (title.contains(":") || title.contains("@g.us")) {
                 return
@@ -128,16 +121,17 @@ class WhatsAppResponderService : NotificationListenerService() {
 
         if (replyMessage.isEmpty()) return
 
-        // Evitar bucles (revisar si el mensaje entrante es la misma respuesta enviada)
+        // Descartar mensajes genéricos del sistema de WhatsApp
+        if (text.contains("mensajes nuevos") || text.contains("Respondiendo a") || text.isEmpty()) {
+            return
+        }
+
+        // Evitar bucles infinitos respondiéndose a uno mismo
         if (text.equals(replyMessage, ignoreCase = true) || text.contains(replyMessage, ignoreCase = true)) {
             return
         }
 
-        if (text.contains("WhatsApp") || text.contains("mensajes nuevos") || text.contains("Respondiendo")) {
-            return
-        }
-
-        // 3. Verificación de coincidencia
+        // Evaluar similitud con el mensaje disparador
         if (triggerMessage.isNotEmpty()) {
             val score = calculateMatchPercentage(text, triggerMessage)
             if (score < requiredPercent) {
@@ -145,10 +139,8 @@ class WhatsAppResponderService : NotificationListenerService() {
             }
         }
 
-        // Enviar respuesta e independizar el cooldown para este remitente específico
-        if (extractAndSendReply(notification, replyMessage)) {
-            lastReplyTimePerSender[title] = currentTime
-        }
+        // Enviar respuesta a TODAS las notificaciones válidas de forma inmediata
+        extractAndSendReply(notification, replyMessage)
     }
 
     private fun extractAndSendReply(notification: Notification, replyMessage: String): Boolean {
